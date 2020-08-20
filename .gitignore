@@ -8,11 +8,11 @@ Debug/*
 fonts/*
 themes/*
 x64/*
+.vs/*
 *.4coder
 
 custom/*
-!4coder_abf.cpp
-!4coder_abf_CA.cpp
+!custom/4coder_abf.cpp
 !custom/abf-custom
 !custom/abf-build/build.bat
 !custom/4coder_draw.cpp
