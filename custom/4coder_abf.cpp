@@ -4,10 +4,14 @@
 #define FCODER_DEFAULT_BINDINGS_CPP
 
 #include "4coder_default_include.cpp"
+#include "abf-custom/4coder_abf_mapping.cpp"
+
+// TODO(brian): figure out if this include is really needed
 #include "generated/managed_id_metadata.cpp"
 
+#define ABF_CUSTOM_MAPPING true
 
-function void abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id);
+// function void abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id);
 
 void
 custom_layer_init(Application_Links *app) {
@@ -17,17 +21,23 @@ custom_layer_init(Application_Links *app) {
 
     set_all_default_hooks(app);
 	
-    set_custom_hook(app, HookID_RenderCaller, abf_render_caller);
+    // NOTE(brian): 2020/11/03-took this out because it's not needed currently
+    // set_custom_hook(app, HookID_RenderCaller, abf_render_caller);
 	
     mapping_init(tctx, &framework_mapping);
 
     #if OS_MAC
     setup_mac_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
+    #elif ABF_CUSTOM_MAPPING
+    //setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #else
     setup_default_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #endif
+
+    setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
 }
 
+/*
 function void
 abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id){
     ProfileScope(app, "default render caller");
@@ -102,5 +112,6 @@ abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id
     draw_set_clip(app, prev_clip);
     
 }
+*/
 
 #endif
