@@ -29,12 +29,10 @@ custom_layer_init(Application_Links *app) {
     #if OS_MAC
     setup_mac_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #elif ABF_CUSTOM_MAPPING
-    //setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
+    setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #else
     setup_default_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #endif
-
-    setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
 }
 
 /*
