@@ -8,6 +8,8 @@
 function
 void abf_draw_CA(Application_Links *app, Buffer_ID buffer, Text_Layout_ID text_layout_id, Range_i64 lines, i64 pos, i32 enclosure_index, u32 flags) {
 
+	Scratch_Block scratch(app);
+
 	File_Attributes attributes = buffer_get_file_attributes(app, buffer);
 	Face_ID face = get_face_id(app, buffer);
 	Face_Metrics metrics = get_face_metrics(app, face);
@@ -24,7 +26,10 @@ void abf_draw_CA(Application_Links *app, Buffer_ID buffer, Text_Layout_ID text_l
 
 	Rect_f32 AppTextLayoutRegion = text_layout_region(app, text_layout_id);
 	f32 abf_width = AppTextLayoutRegion.x1 - AppTextLayoutRegion.x0;
-	
+	Layout_Function* LayoutFunc = buffer_get_layout(app, buffer);
+	//Layout_Item_List LayoutList = LayoutFunc(app, scratch, buffer, { 0, buffer_get_line_count(app, buffer) }, face, abf_width);
+	Layout_Item_List LayoutList = LayoutFunc(app, scratch, buffer, lines, face, abf_width);
+	f32 LayoutItemY1 = LayoutList.first->items[0].padded_y1;
 
 	// TODO(brian): conditionally set the "line" parameter in case the opening '{'
 	//				is on "lines.min"... currently, if the opening '{' is on
@@ -38,11 +43,11 @@ void abf_draw_CA(Application_Links *app, Buffer_ID buffer, Text_Layout_ID text_l
 																		lines.min,
 																		0);
 	i64 BufferIndexOfPrevLine = buffer_pos_from_relative_character(app,
-																		buffer,
-																		abf_width,
-																		face,
-																		lines.min - 1,
-																		0);
+																	buffer,
+																	abf_width,
+																	face,
+																	lines.min - 1,
+																	0);
 
 	V2_i64 indicies = { BufferIndexOfScopeHeader, BufferIndexOfPrevLine };
 
@@ -98,9 +103,9 @@ void abf_draw_CA(Application_Links *app, Buffer_ID buffer, Text_Layout_ID text_l
 														*/
 	Rect_f32 EnclosureBox = view_padded_box_of_pos(app,
 													get_active_view(app, 0),
-													lines.max,
+													lines.min,
 													pos);
-	f32 YPositionToStartDrawing = 2.f * EnclosureBox.y1;
+	f32 YPositionToStartDrawing = 2.f * LayoutItemY1;// EnclosureBox.y0;
 	 //*/
 	/***************************************************************************/
 
