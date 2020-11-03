@@ -2,7 +2,7 @@
 4coder_draw.cpp - Layout and rendering implementation of standard UI pieces (including buffers)
 */
 
-#include "abf-custom\4coder_abf_CA.cpp"
+// #include "abf-custom\4coder_abf_CA.cpp"
 
 // TOP
 
@@ -702,9 +702,10 @@ draw_enclosures(Application_Links *app, Text_Layout_ID text_layout_id, Buffer_ID
                 }
             }
 
+            // NOTE(brian): 2020/11/03 - This is where Context Alignment is drawn
             // NOTE(brian): this is where we grab the pointer to the string and the location of the block header and display
-            Range_i64 abf_CA_line_range = (r[0].min == 0) ? r[1] : r[0];
-            abf_draw_CA(app, buffer, text_layout_id, abf_CA_line_range, pos, color_index, flags);
+            //Range_i64 abf_CA_line_range = (r[0].min == 0) ? r[1] : r[0];
+            //abf_draw_CA(app, buffer, text_layout_id, abf_CA_line_range, pos, color_index, flags);
             // END CUSTOM SECTION
         }
         else{
