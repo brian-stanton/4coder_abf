@@ -136,7 +136,8 @@ setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     Bind(copy, KeyCode_C, KeyCode_Control);
     Bind(delete_range, KeyCode_D, KeyCode_Control);
     Bind(delete_line, KeyCode_D, KeyCode_Alt); // new
-    Bind(center_view, KeyCode_I, KeyCode_Control);
+    //Bind(center_view, KeyCode_I, KeyCode_Control); //new
+    Bind(abf_center_view, KeyCode_I, KeyCode_Control); //new
     // good
 
     // Bind(left_adjust_view, KeyCode_E, KeyCode_Control, KeyCode_Shift); // fix
