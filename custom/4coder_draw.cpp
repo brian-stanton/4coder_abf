@@ -472,6 +472,7 @@ draw_fps_hud(Application_Links *app, Frame_Info frame_info,
 function FColor
 get_token_color_cpp(Token token){
     Managed_ID color = defcolor_text_default;
+    FColor ColorToBeReturned = {};
     switch (token.kind){
         case TokenBaseKind_Preprocessor:
         {
@@ -520,7 +521,8 @@ get_token_color_cpp(Token token){
             }
         }break;
     }
-    return(fcolor_id(color));
+    ColorToBeReturned.id = (ID_Color)color;
+    return(ColorToBeReturned);
 }
 
 function void
