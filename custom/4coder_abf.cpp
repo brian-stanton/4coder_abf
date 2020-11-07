@@ -11,16 +11,19 @@
 #include "generated/managed_id_metadata.cpp"
 
 #define ABF_CUSTOM_MAPPING true
+#define ABF_COLOR_TEXT 0xFF90B080
 #define ABF_COLOR_HIGHLIGHT_CURSOR_LINE 0xFF3D65A6
 #define ABF_COLOR_BACKGROUND 0xFF121A26
 #define ABF_COLOR_MARGINS 0xFFC48000
 #define ABF_COLOR_SCOPE_HIGHLIGHT_VAL 0xFF288D8F
+#define ABF_COLOR_PP_INCLUDE 0xFFC2A70E
+#define ABF_COLOR_LIST_HOVER 0xFF3F556E
 
 function void abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id);
-function void
-abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
+function void abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     Buffer_ID buffer, Text_Layout_ID text_layout_id,
     Rect_f32 rect);
+function void set_abf_color_scheme(Application_Links* app);
 
 // TODO(brian): Put into custom command file
 CUSTOM_COMMAND_SIG(abf_center_view)
@@ -52,7 +55,7 @@ CUSTOM_DOC("Cycling through three positions, the frame will first center on the 
         {
             f32 LineHeight = get_view_line_height(app, view);
             // Scroll to bottom and update state
-            ScrollBuffer.target.pixel_shift.y = ((-view_height + LineHeight) * abfBottomMod);
+            ScrollBuffer.target.pixel_shift.y = -view_height + LineHeight;
             CVCurrentState = ABF_CVC_BOTTOM;
         } break;
         case ABF_CVC_BOTTOM:
@@ -85,6 +88,7 @@ custom_layer_init(Application_Links *app) {
     CVCurrentState = ABF_CVC_OFF;
 
     default_framework_init(app);
+    set_abf_color_scheme(app);
 
     set_all_default_hooks(app);
 	
@@ -101,6 +105,64 @@ custom_layer_init(Application_Links *app) {
     setup_default_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
     #endif
 }
+
+function void
+set_abf_color_scheme(Application_Links* app) {
+    if (global_theme_arena.base_allocator == 0) {
+        global_theme_arena = make_arena_system();
+    }
+
+    Arena* arena = &global_theme_arena;
+
+    //default_color_table = make_color_table(app, arena);
+
+    default_color_table.arrays[0] = make_colors(arena, ABF_COLOR_BACKGROUND); // No idea
+    default_color_table.arrays[defcolor_bar] = make_colors(arena, 0xFF888888); // Filebar background color
+    default_color_table.arrays[defcolor_base] = make_colors(arena, 0xFF000000); // Filebar text color... probably some other things too
+    default_color_table.arrays[defcolor_pop1] = make_colors(arena, 0xFF3C57DC);
+    default_color_table.arrays[defcolor_pop2] = make_colors(arena, 0xFFFF0000);
+    default_color_table.arrays[defcolor_back] = make_colors(arena, 0xFF0C0C0C);
+
+    default_color_table.arrays[defcolor_margin] = make_colors(arena, 0xFF181818);
+    default_color_table.arrays[defcolor_margin_hover] = make_colors(arena, 0xFF252525);
+    default_color_table.arrays[defcolor_margin_active] = make_colors(arena, 0xFFbd6800);// NOTE(brian): not gonna show up because of the draw_margin call in 4coder_abf.cpp
+    default_color_table.arrays[defcolor_list_item] = make_colors(arena, ABF_COLOR_BACKGROUND, ABF_COLOR_BACKGROUND & 0xFF0F0F0F);// 0xFF0C0C0C);// (Lighter, Darker)
+    default_color_table.arrays[defcolor_list_item_hover] = make_colors(arena, ABF_COLOR_BACKGROUND, ABF_COLOR_LIST_HOVER);
+    default_color_table.arrays[defcolor_list_item_active] = make_colors(arena, ABF_COLOR_HIGHLIGHT_CURSOR_LINE, ABF_COLOR_HIGHLIGHT_CURSOR_LINE);// 0xFF323232);
+
+    default_color_table.arrays[defcolor_cursor] = make_colors(arena, 0xFF00EE00, 0xFFEE7700);
+    default_color_table.arrays[defcolor_at_cursor] = make_colors(arena, 0xFF0C0C0C);
+    default_color_table.arrays[defcolor_highlight_cursor_line] = make_colors(arena, ABF_COLOR_HIGHLIGHT_CURSOR_LINE);
+    default_color_table.arrays[defcolor_highlight] = make_colors(arena, ABF_COLOR_HIGHLIGHT_CURSOR_LINE);
+    default_color_table.arrays[defcolor_at_highlight] = make_colors(arena, 0xFFFF44DD);
+    default_color_table.arrays[defcolor_mark] = make_colors(arena, 0xFF494949);
+    default_color_table.arrays[defcolor_text_default] = make_colors(arena, ABF_COLOR_TEXT); // 0xFF90B080
+    default_color_table.arrays[defcolor_comment] = make_colors(arena, 0xFF2090F0);
+    default_color_table.arrays[defcolor_comment_pop] = make_colors(arena, 0xFF00A000, 0xFFA00000);
+    default_color_table.arrays[defcolor_keyword] = make_colors(arena, 0xFF249cff);// 0xFFD08F20); // if, return, typedef etc; might want to change this given the color of the PP and include colors
+
+    default_color_table.arrays[defcolor_str_constant] = make_colors(arena, 0xFF50FF30);
+    default_color_table.arrays[defcolor_char_constant] = make_colors(arena, 0xFF50FF30);
+    default_color_table.arrays[defcolor_int_constant] = make_colors(arena, 0xFF50FF30);
+    default_color_table.arrays[defcolor_float_constant] = make_colors(arena, 0xFF50FF30);
+    default_color_table.arrays[defcolor_bool_constant] = make_colors(arena, 0xFF50FF30);
+
+    default_color_table.arrays[defcolor_preproc] = make_colors(arena, ABF_COLOR_PP_INCLUDE);
+    default_color_table.arrays[defcolor_include] = make_colors(arena, ABF_COLOR_PP_INCLUDE);
+    default_color_table.arrays[defcolor_special_character] = make_colors(arena, 0xFFFF0000);
+    default_color_table.arrays[defcolor_ghost_character] = make_colors(arena, 0xFF4E5E46);
+    default_color_table.arrays[defcolor_highlight_junk] = make_colors(arena, 0xFF3A0000);
+    default_color_table.arrays[defcolor_highlight_white] = make_colors(arena, 0xFF003A3A);
+    default_color_table.arrays[defcolor_paste] = make_colors(arena, 0xFFDDEE00);
+    default_color_table.arrays[defcolor_undo] = make_colors(arena, 0xFF00DDEE);
+    default_color_table.arrays[defcolor_back_cycle] = make_colors(arena, 0xFF130707, 0xFF071307, 0xFF070713, 0xFF131307);
+    default_color_table.arrays[defcolor_text_cycle] = make_colors(arena, 0xFFA00000, 0xFF00A000, 0xFF0030B0, 0xFFA0A000);
+    default_color_table.arrays[defcolor_line_numbers_back] = make_colors(arena, 0xFF101010);
+    default_color_table.arrays[defcolor_line_numbers_text] = make_colors(arena, 0xFF404040);
+
+    active_color_table = default_color_table;
+}
+
 
 /*
 function void
@@ -270,7 +332,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
 
     // NOTE(allen): Cursor shape
     Face_Metrics metrics = get_face_metrics(app, face_id);
-    f32 cursor_roundness = (metrics.normal_advance * 0.5f) * 0.9f;
+    // NOTE(brian): reducing the 0.9 to 0.5 the cursor shape became sharper(less rounded)
+    f32 cursor_roundness = (metrics.normal_advance * 0.5f) * 0.5f;// 0.9f;
     f32 mark_thickness = 2.f;
 
     // NOTE(allen): Token colorizing
@@ -297,8 +360,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
 
     // NOTE(allen): Scope highlight
     if (global_config.use_scope_highlight) {
-        //Color_Array colors = finalize_color_array(defcolor_back_cycle);
-        Color_Array colors = finalize_color_array(ABF_COLOR_SCOPE_HIGHLIGHT_VAL);
+        Color_Array colors = finalize_color_array(defcolor_back_cycle);
+        //Color_Array colors = finalize_color_array(ABF_COLOR_SCOPE_HIGHLIGHT_VAL);
         draw_scope_highlight(app, buffer, text_layout_id, cursor_pos, colors.vals, colors.count);
     }
 
@@ -333,8 +396,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
 
         // NOTE(brian): Customization here
         draw_line_highlight(app, text_layout_id, line_number,
-            ABF_COLOR_HIGHLIGHT_CURSOR_LINE);
-    //        fcolor_id(defcolor_highlight_cursor_line));
+//            ABF_COLOR_HIGHLIGHT_CURSOR_LINE);
+            fcolor_id(defcolor_highlight_cursor_line));
     }
 
     // NOTE(allen): Whitespace highlight
