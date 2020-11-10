@@ -29,7 +29,8 @@ setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     Bind(interactive_new, KeyCode_N, KeyCode_Control);
     Bind(interactive_open_or_new, KeyCode_O, KeyCode_Control);
     Bind(open_in_other, KeyCode_O, KeyCode_Alt);
-    Bind(interactive_kill_buffer, KeyCode_F5); // new
+	Bind(close_panel, KeyCode_F5); // new; added 2020/11/10
+    Bind(interactive_kill_buffer, KeyCode_F5, KeyCode_Alt); // new; updated 2020/11/10
     Bind(interactive_switch_buffer, KeyCode_B, KeyCode_Control); // new
     Bind(project_go_to_root_directory, KeyCode_R, KeyCode_Alt); // new
     Bind(save_all_dirty_buffers, KeyCode_S, KeyCode_Control, KeyCode_Shift);
