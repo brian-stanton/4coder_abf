@@ -6,6 +6,7 @@
 #include "4coder_default_include.cpp"
 #include "abf-custom/4coder_abf_center_view.h"
 #include "abf-custom/4coder_abf_mapping.cpp"
+#include "abf-custom/4coder_abf_syntax_highlighting.cpp"
 
 // TODO(brian): figure out if this include is really needed
 #include "generated/managed_id_metadata.cpp"
@@ -24,6 +25,7 @@ function void abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID
     Buffer_ID buffer, Text_Layout_ID text_layout_id,
     Rect_f32 rect);
 function void set_abf_color_scheme(Application_Links* app);
+function void abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id, Token_Array* array, Buffer_ID buffer);
 
 // TODO(brian): Put into custom command file
 CUSTOM_COMMAND_SIG(abf_center_view)
@@ -155,91 +157,32 @@ set_abf_color_scheme(Application_Links* app) {
     default_color_table.arrays[defcolor_highlight_white] = make_colors(arena, 0xFF003A3A);
     default_color_table.arrays[defcolor_paste] = make_colors(arena, 0xFFDDEE00);
     default_color_table.arrays[defcolor_undo] = make_colors(arena, 0xFF00DDEE);
-    default_color_table.arrays[defcolor_back_cycle] = make_colors(arena, 0xFF130707, 0xFF071307, 0xFF070713, 0xFF131307);
+    
     default_color_table.arrays[defcolor_text_cycle] = make_colors(arena, 0xFFA00000, 0xFF00A000, 0xFF0030B0, 0xFFA0A000);
+    default_color_table.arrays[defcolor_back_cycle] = make_colors(arena,
+                                                                    // 1
+                                                                    0xFF2C4D5C, // greyish teal
+                                                                    
+                                                                    // 2
+                                                                    0xFF1c6336, // matte emerald
+
+                                                                    // 3
+                                                                    0xFF005B87, // cool misty blue
+
+                                                                    // 4
+                                                                    0xFF326352 // seafoam
+                                                                );
+
     default_color_table.arrays[defcolor_line_numbers_back] = make_colors(arena, 0xFF101010);
     default_color_table.arrays[defcolor_line_numbers_text] = make_colors(arena, 0xFF404040);
 
+    default_color_table.arrays[primitive_highlight_type] = make_colors(arena, 0xFF30E3E3);// 0xffaaaaef);
+    default_color_table.arrays[primitive_highlight_function] = make_colors(arena, 0xFFFF9B05);// 0xffbbbbbb);
+    default_color_table.arrays[primitive_highlight_macro] = make_colors(arena, 0xFFA280E0);// 0xFF6516F7);// 0xFFA46391);
+    default_color_table.arrays[primitive_highlight_4coder_command] = make_colors(arena, 0xffffffff);
+
     active_color_table = default_color_table;
 }
-
-
-/*
-function void
-abf_render_caller(Application_Links *app, Frame_Info frame_info, View_ID view_id){
-    ProfileScope(app, "default render caller");
-    View_ID active_view = get_active_view(app, Access_Always);
-    b32 is_active_view = (active_view == view_id);
-    
-    Rect_f32 region = draw_background_and_margin(app, view_id, is_active_view);
-    Rect_f32 prev_clip = draw_set_clip(app, region);
-    
-    Buffer_ID buffer = view_get_buffer(app, view_id, Access_Always);
-    Face_ID face_id = get_face_id(app, buffer);
-    Face_Metrics face_metrics = get_face_metrics(app, face_id);
-    f32 line_height = face_metrics.line_height;
-    f32 digit_advance = face_metrics.decimal_digit_advance;
-    
-    // NOTE(allen): file bar
-    b64 showing_file_bar = false;
-    if (view_get_setting(app, view_id, ViewSetting_ShowFileBar, &showing_file_bar) && showing_file_bar){
-        Rect_f32_Pair pair = layout_file_bar_on_top(region, line_height);
-        draw_file_bar(app, view_id, buffer, face_id, pair.min);
-        region = pair.max;
-    }
-    
-    Buffer_Scroll scroll = view_get_buffer_scroll(app, view_id);
-    
-    Buffer_Point_Delta_Result delta = delta_apply(app, view_id,
-                                                  frame_info.animation_dt, scroll);
-    if (!block_match_struct(&scroll.position, &delta.point)){
-        block_copy_struct(&scroll.position, &delta.point);
-        view_set_buffer_scroll(app, view_id, scroll, SetBufferScroll_NoCursorChange);
-    }
-    if (delta.still_animating){
-        animate_in_n_milliseconds(app, 0);
-    }
-    
-    // NOTE(allen): query bars
-    region = default_draw_query_bars(app, region, view_id, face_id);
-    
-    // NOTE(allen): FPS hud
-    if (show_fps_hud){
-        Rect_f32_Pair pair = layout_fps_hud_on_bottom(region, line_height);
-        draw_fps_hud(app, frame_info, face_id, pair.max);
-        region = pair.min;
-        animate_in_n_milliseconds(app, 1000);
-    }
-    
-    // NOTE(allen): layout line numbers
-    Rect_f32 line_number_rect = {};
-    if (global_config.show_line_number_margins){
-        Rect_f32_Pair pair = layout_line_number_margin(app, buffer, region, digit_advance);
-        line_number_rect = pair.min;
-        region = pair.max;
-    }
-    
-    // NOTE(allen): begin buffer render
-    Buffer_Point buffer_point = scroll.position;
-    Text_Layout_ID text_layout_id = text_layout_create(app, buffer, region, buffer_point);
-    
-    // NOTE(allen): draw line numbers
-    if (global_config.show_line_number_margins){
-        draw_line_number_margin(app, view_id, buffer, face_id, text_layout_id, line_number_rect);
-    }
-    
-    // NOTE(allen): draw the buffer
-    default_render_buffer(app, view_id, face_id, buffer, text_layout_id, region);
-    
-    // NOTE(brian): testing custom draw here
-    // TODO(brian): write something here to show that custom hook has loaded
-    //draw_rectangle_fcolor(app, Rf32(0.0f, 0.0f, 100.0f, 100.0f), 0.0f, f_pink);
-
-    text_layout_free(app, text_layout_id);
-    draw_set_clip(app, prev_clip);
-    
-}
-*/
 
 function void
 abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id) {
@@ -339,7 +282,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     // NOTE(allen): Token colorizing
     Token_Array token_array = get_token_array_from_buffer(app, buffer);
     if (token_array.tokens != 0) {
-        draw_cpp_token_colors(app, text_layout_id, &token_array);
+        //draw_cpp_token_colors(app, text_layout_id, &token_array);
+        abf_draw_cpp_token_colors(app, text_layout_id, &token_array, buffer);
 
         // NOTE(allen): Scan for TODOs and NOTEs
         if (global_config.use_comment_keyword) {
@@ -361,9 +305,13 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     // NOTE(allen): Scope highlight
     if (global_config.use_scope_highlight) {
         Color_Array colors = finalize_color_array(defcolor_back_cycle);
-        //Color_Array colors = finalize_color_array(ABF_COLOR_SCOPE_HIGHLIGHT_VAL);
+
+        //Color_Array ScopeHighlightColors = {};
         draw_scope_highlight(app, buffer, text_layout_id, cursor_pos, colors.vals, colors.count);
     }
+
+    // TODO(brian): 2020/11/13-probably want to draw scope context here
+    // abf_draw_CA(app, buffer, text_layout_id, abf_CA_line_range, pos, color_index, flags);
 
     if (global_config.use_error_highlight || global_config.use_jump_highlight) {
         // NOTE(allen): Error highlight
