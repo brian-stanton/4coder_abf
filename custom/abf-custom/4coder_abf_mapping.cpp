@@ -112,8 +112,8 @@ setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     Bind(move_right, KeyCode_L, KeyCode_Control);
     Bind(seek_end_of_line, KeyCode_L, KeyCode_Control, KeyCode_Shift);
     Bind(seek_beginning_of_line, KeyCode_H, KeyCode_Control, KeyCode_Shift);
-    Bind(page_up, KeyCode_V, KeyCode_Alt);
-    Bind(page_down, KeyCode_V, KeyCode_Control);
+    Bind(page_up, KeyCode_K, KeyCode_Control, KeyCode_Shift);
+    Bind(page_down, KeyCode_J, KeyCode_Control, KeyCode_Shift);
     Bind(goto_beginning_of_file, KeyCode_PageUp);
     Bind(goto_end_of_file, KeyCode_PageDown);
     Bind(move_up_to_blank_line_end, KeyCode_K, KeyCode_Alt);
@@ -152,7 +152,7 @@ setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     // Bind(list_all_locations_of_selection, KeyCode_G, KeyCode_Control, KeyCode_Shift); // fix
     
     Bind(snippet_lister, KeyCode_BackwardSlash, KeyCode_Control); // new
-    Bind(kill_buffer, KeyCode_K, KeyCode_Control, KeyCode_Shift);
+    Bind(kill_buffer, KeyCode_K, KeyCode_Alt, KeyCode_Shift);
     // good
 
     // NOTE(brian): 2020/11/03-Ctrl+L is now mapped to moving the cursor left; make sure to change the mapping if you include this
