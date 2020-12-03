@@ -582,8 +582,7 @@ abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id,
 
         if (!colored) {
             // TODO(brian): move this preproc def into header file for 4coder_abf.cpp and include at the top of this file
-//#if ABF_SYNTAX_HIGHLIGHT
-#if 1
+#if ABF_SYNTAX_HIGHLIGHT
             color = abf_get_token_color_cpp(*token);
 #else
             color = get_token_color_cpp(*token);
