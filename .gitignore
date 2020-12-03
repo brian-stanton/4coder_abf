@@ -10,8 +10,10 @@ themes/*
 x64/*
 .vs/*
 *.4coder
+backup/*
 
 custom/*
 !custom/4coder_abf.cpp
+!custom/4coder_abf.h
 !custom/abf-custom
 !custom/4coder_draw.cpp

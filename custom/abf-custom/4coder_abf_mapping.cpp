@@ -4,8 +4,6 @@
 
 // TOP
 
-#include "..\4coder_default_include.cpp"
-
 function void
 setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     MappingScope();
