@@ -55,6 +55,36 @@ CUSTOM_DOC("Cycling through three positions, the frame will first center on the 
     CVLastLine = cursor.line;
 }
 
+CUSTOM_COMMAND_SIG(abf_page_up)
+CUSTOM_DOC("")
+{
+    View_ID view = get_active_view(app, Access_ReadVisible);
+    Rect_f32 region = view_get_buffer_region(app, view);
+
+    // NOTE(brian): With Access_Visible set, the value Buffer will only have a buffer id if the view attached to the buffer is visible... probably unnecessary here
+    // TODO(brian): look into the access flags (Access_Flag)
+    Buffer_ID Buffer = view_get_buffer(app, view, Access_Visible);
+
+    if (Buffer) {
+        abf_page(app, view, region, Buffer, true);
+    }
+}
+
+CUSTOM_COMMAND_SIG(abf_page_down)
+CUSTOM_DOC("")
+{
+    View_ID view = get_active_view(app, Access_ReadVisible);
+    Rect_f32 region = view_get_buffer_region(app, view);
+
+    // NOTE(brian): With Access_Visible set, the value Buffer will only have a buffer id if the view attached to the buffer is visible... probably unnecessary here
+    // TODO(brian): look into the access flags (Access_Flag)
+    Buffer_ID Buffer = view_get_buffer(app, view, Access_Visible);
+
+    if (Buffer) {
+        abf_page(app, view, region, Buffer, false);
+    }
+}
+
 void
 custom_layer_init(Application_Links *app) {
     Thread_Context *tctx = get_thread_context(app);
@@ -129,6 +159,9 @@ set_abf_color_scheme(Application_Links* app) {
     default_color_table.arrays[defcolor_keyword] = make_colors(arena, ABF_COLOR_TEXT);// 0xFF249cff);// 0xFFD08F20); // if, return, typedef etc; might want to change this given the color of the PP and include colors
     default_color_table.arrays[abf_color_keyword_subset] = make_colors(arena, ABF_COLOR_TYPE);
     default_color_table.arrays[abf_primitive_highlight_type] = make_colors(arena, ABF_COLOR_TYPE);// 0xFF30E3E3);// 0xffaaaaef);
+    default_color_table.arrays[abf_color_var_declaration] = make_colors(arena, ABF_COLOR_VAR_DECLARATION);
+
+    default_color_table.arrays[abf_color_parens] = make_colors(arena, ABF_COLOR_PARENS);
     
     default_color_table.arrays[abf_primitive_highlight_function] = make_colors(arena, 0xFFFF9B05);// 0xffbbbbbb);
     default_color_table.arrays[abf_primitive_highlight_macro] = make_colors(arena, 0xFFA280E0);// 0xFF6516F7);// 0xFFA46391);
@@ -620,7 +653,7 @@ abf_get_token_color_cpp(Token token) {
     case TokenBaseKind_Keyword:
     {
         // NOTE(brian): 2020/12/3-keyword highlighting customization; primitive types to be highlighted differently
-        color = abf_get_keyword_token_color_cpp(token);
+        color = abf_token_color(token);
     }break;
     case TokenBaseKind_Comment:
     {
@@ -638,6 +671,22 @@ abf_get_token_color_cpp(Token token) {
     {
         color = defcolor_float_constant;
     }break;
+    // NOTE(brian): Commented out because it highlights basically everything
+    /*
+    case TokenBaseKind_Identifier:
+    {
+        color = abf_token_color(token);
+    }; break;
+    */
+    case TokenBaseKind_ParentheticalOpen:
+    case TokenBaseKind_ParentheticalClose:
+    case TokenBaseKind_ScopeOpen:
+    case TokenBaseKind_ScopeClose:
+    case TokenBaseKind_StatementClose:
+    {
+        color = abf_color_parens;
+    } break;
+
     default:
     {
         switch (token.sub_kind) {
@@ -666,24 +715,43 @@ abf_get_token_color_cpp(Token token) {
 }
 
 function Managed_ID
-abf_get_keyword_token_color_cpp(Token token) {
+abf_token_color(Token token) {
+    switch (token.kind)
+    {
+    case TokenBaseKind_Keyword:
+    {
+        return abf_color_keyword(token.sub_kind);
+    } break;
+    case TokenBaseKind_Identifier:
+    {
+        return abf_color_identifier(token.sub_kind);
+    } break;
+    default:
+    {
+        return defcolor_text_default;
+    }
 
+    } // end switch
+}
+
+function Managed_ID
+abf_color_keyword(Token_Base_Kind sub_kind) {
     /*
         NOTE(brian): Tokens from the buffer are assigned a "sub_kind", a sub type. Thankfully,
-                    some of the subtypes relate to c++ tokens and are already assigned by the core
-                    system (TODO(brian): find out where... i think maybe lexer_cpp.cpp)....
-                    I found out about the subtypes through some basic debugging:
-                    
-                    I put an int variable declaration at the top of the buffer, turned on a breakpoint
-                    at the switch statement from abf_get_token_color and looked at the token being handled,
-                    knew it was the integer (based on its "kind" attribute being set as 4 (TokenBaseKind_Keyword
-                    from 4coder_token.h), then saw that the sub_kind was set to 96...after looking more at the
-                    codebase, I found that the 96 matched the macro TokenCppKind_Int and assumed all c++ related
-                    tokens must be assigned a subtype from the TokenCppKind declaration (see lexer_cpp.h)....
-                    From there i just found the token sub kinds i wanted and put them in the switch statement below
+                some of the subtypes relate to c++ tokens and are already assigned by the core
+                system (TODO(brian): find out where... i think maybe lexer_cpp.cpp)....
+                I found out about the subtypes through some basic debugging:
+
+                I put an int variable declaration at the top of the buffer, turned on a breakpoint
+                at the switch statement from abf_get_token_color and looked at the token being handled,
+                knew it was the integer (based on its "kind" attribute being set as 4 (TokenBaseKind_Keyword
+                from 4coder_token.h), then saw that the sub_kind was set to 96...after looking more at the
+                codebase, I found that the 96 matched the macro TokenCppKind_Int and assumed all c++ related
+                tokens must be assigned a subtype from the TokenCppKind declaration (see lexer_cpp.h)....
+                From there i just found the token sub kinds i wanted and put them in the switch statement below
     */
 
-    switch (token.sub_kind)
+    switch (sub_kind)
     {
     case TokenCppKind_Void:
     case TokenCppKind_Bool:
@@ -706,6 +774,58 @@ abf_get_keyword_token_color_cpp(Token token) {
     }break;
 
     } // end switch
+}
+
+
+function Managed_ID
+abf_color_identifier(Token_Base_Kind sub_kind) {
+    switch (sub_kind)
+    {
+    case TokenCppKind_Identifier:
+    {
+        // NOTE(brian): the intention of this is for variable names in their declaration to be highlighted with this color
+        return abf_color_var_declaration;
+    } break;
+
+    default:
+    {
+        return defcolor_text_default;
+    } break;
+
+    } // end switch
+}
+
+/**
+    Used by abf_page_up and abf_page_down commands (declared at top)
+*/
+function void
+abf_page(Application_Links* app, View_ID view, Rect_f32 region, Buffer_ID Buffer, b32 PageUp) {
+
+    i64 pos = view_get_cursor_pos(app, view);
+    Buffer_Cursor cursor = view_compute_cursor(app, view, seek_pos(pos));
+    f32 ViewHeight = rect_height(region);
+    Buffer_Scroll ScrollBuffer = view_get_buffer_scroll(app, view);
+
+    f32 LineHeight = get_view_line_height(app, view);
+    i64 LinesInView = (i64)(ViewHeight / LineHeight);
+
+    Buffer_Scroll scroll = view_get_buffer_scroll(app, view);
+    scroll.target.line_number = (PageUp) ? (cursor.line - LinesInView) : (cursor.line + LinesInView);
+    scroll.target.pixel_shift.y = -ViewHeight * abfCenterMod;
+
+    // If the line number exists, set the cursor and scroll
+    // TODO(brian): gotta implement condition check for a line going over the max... just need to first figure out what the max is...
+    if (scroll.target.line_number > 0) {
+
+        Buffer_Seek seek = {};
+        seek.type = buffer_seek_line_col;
+        seek.line = scroll.target.line_number;
+        seek.col = cursor.col;
+        view_set_cursor(app, view, seek);
+
+        view_set_buffer_scroll(app, view, scroll, SetBufferScroll_SnapCursorIntoView);
+        no_mark_snap_to_cursor(app, view);
+    }
 }
 
 function void

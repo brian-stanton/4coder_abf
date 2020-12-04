@@ -110,8 +110,8 @@ setup_abf_mapping(Mapping* mapping, i64 global_id, i64 file_id, i64 code_id) {
     Bind(move_right, KeyCode_L, KeyCode_Control);
     Bind(seek_end_of_line, KeyCode_L, KeyCode_Control, KeyCode_Shift);
     Bind(seek_beginning_of_line, KeyCode_H, KeyCode_Control, KeyCode_Shift);
-    Bind(page_up, KeyCode_K, KeyCode_Control, KeyCode_Shift);
-    Bind(page_down, KeyCode_J, KeyCode_Control, KeyCode_Shift);
+    Bind(abf_page_up, KeyCode_K, KeyCode_Control, KeyCode_Shift);
+    Bind(abf_page_down, KeyCode_J, KeyCode_Control, KeyCode_Shift);
     Bind(goto_beginning_of_file, KeyCode_PageUp);
     Bind(goto_end_of_file, KeyCode_PageDown);
     Bind(move_up_to_blank_line_end, KeyCode_K, KeyCode_Alt);
