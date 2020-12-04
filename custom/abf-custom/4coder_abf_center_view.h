@@ -5,6 +5,7 @@
 #include "..\4coder_default_include.cpp"
 
 // NOTE(brian): CVC is center view context
+// TODO(brian): Make these items into an enumerated type
 #define ABF_CVC_OFF 0x04
 #define ABF_CVC_CENTER 0x00
 #define ABF_CVC_TOP 0x01
