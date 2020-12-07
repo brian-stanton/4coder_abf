@@ -16,4 +16,3 @@ custom/*
 !custom/4coder_abf.cpp
 !custom/4coder_abf.h
 !custom/abf-custom
-!custom/4coder_draw.cpp
