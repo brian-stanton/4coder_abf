@@ -1,3 +1,6 @@
+
+// TODO(brian): Figure out if I actually need to take these out. I'm thinking the condition evaluation
+//				might result in the id definitions not being included in 4coder_default_colors.h by the preprocessor
 #ifndef _4CODER_ABF_COLORS
 #define _4CODER_ABF_COLORS
 
