@@ -1,6 +1,8 @@
 
 #include "4coder_abf.h"
 
+#define ABF_COLOR_TEST 0xFF00ad54 //0xFF0bb372
+
 // TODO(brian): Put into custom command file
 CUSTOM_COMMAND_SIG(abf_center_view)
 CUSTOM_DOC("Cycling through three positions, the frame will first center on the line the cursor is on; next, the line the cursor is on will go to the top of the frame; lastly, the line will go to the bottom of the frame")
@@ -134,11 +136,14 @@ set_abf_color_scheme(Application_Links* app) {
     //default_color_table = make_color_table(app, arena);
 
     default_color_table.arrays[0] = make_colors(arena, ABF_COLOR_BACKGROUND); // No idea
-    default_color_table.arrays[defcolor_bar] = make_colors(arena, ABF_COLOR_TRIM); //0xFF888888); // Filebar background color
+    default_color_table.arrays[defcolor_bar] = make_colors(arena, 0xFF888888); // Filebar background color
     default_color_table.arrays[defcolor_base] = make_colors(arena, 0xFF000000); // Filebar text color... probably some other things too
     default_color_table.arrays[defcolor_pop1] = make_colors(arena, 0xFF3C57DC);
     default_color_table.arrays[defcolor_pop2] = make_colors(arena, 0xFFFF0000);
     default_color_table.arrays[defcolor_back] = make_colors(arena, 0xFF0C0C0C);
+
+    default_color_table.arrays[abf_color_background] = make_colors(arena, ABF_COLOR_BACKGROUND);
+    default_color_table.arrays[abf_color_active] = make_colors(arena, ABF_COLOR_TRIM);
 
     default_color_table.arrays[defcolor_margin] = make_colors(arena, 0xFF181818);
     default_color_table.arrays[defcolor_margin_hover] = make_colors(arena, 0xFF252525);
@@ -185,16 +190,16 @@ set_abf_color_scheme(Application_Links* app) {
     default_color_table.arrays[defcolor_text_cycle] = make_colors(arena, 0xFFA00000, 0xFF00A000, 0xFF0030B0, 0xFFA0A000);
     default_color_table.arrays[defcolor_back_cycle] = make_colors(arena,
                                                                     // 1
-                                                                    0xFF2C4D5C, // greyish teal
-                                                                    
+                                                                    FOUR_CODER_COLOR_BACK_DEFAULT,
+
                                                                     // 2
-                                                                    0xFF1c6336, // matte emerald
+                                                                    ABF_COLOR_BACKGROUND,
 
                                                                     // 3
-                                                                    0xFF005B87, // cool misty blue
+                                                                    ABF_COLOR_DEEP_FOREST,
 
                                                                     // 4
-                                                                    0xFF326352 // seafoam
+                                                                    0xFF1c6336 // matte emerald
                                                                 );
 
     default_color_table.arrays[defcolor_line_numbers_back] = make_colors(arena, 0xFF101010);
@@ -218,10 +223,10 @@ abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id
     // NOTE(brian): Draw background, margins
     draw_rectangle(app, region, 0.f, ABF_COLOR_BACKGROUND);
     if (is_active_view) {
-        draw_margin(app, view_rect, region, ABF_COLOR_TRIM);
+        draw_margin(app, view_rect, region, fcolor_id(abf_color_active));
     }
     else {
-        draw_margin(app, view_rect, region, ABF_COLOR_BACKGROUND);
+        draw_margin(app, view_rect, region, fcolor_id(abf_color_background));
     }
 #else
     Rect_f32 region = draw_background_and_margin(app, view_id, is_active_view);
@@ -239,7 +244,11 @@ abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id
     b64 showing_file_bar = false;
     if (view_get_setting(app, view_id, ViewSetting_ShowFileBar, &showing_file_bar) && showing_file_bar) {
         Rect_f32_Pair pair = layout_file_bar_on_top(region, line_height);
+#if ABF_CUSTOMIZATIONS
+        abf_draw_file_bar(app, view_id, buffer, face_id, pair.min);
+#else
         draw_file_bar(app, view_id, buffer, face_id, pair.min);
+#endif
         region = pair.max;
     }
 
@@ -826,6 +835,71 @@ abf_page(Application_Links* app, View_ID view, Rect_f32 region, Buffer_ID Buffer
         view_set_buffer_scroll(app, view, scroll, SetBufferScroll_SnapCursorIntoView);
         no_mark_snap_to_cursor(app, view);
     }
+}
+
+function void
+abf_draw_file_bar(Application_Links* app, View_ID view_id, Buffer_ID buffer, Face_ID face_id, Rect_f32 bar) {
+    Scratch_Block scratch(app);
+
+    View_ID active_view = get_active_view(app, Access_Always);
+    b32 is_active_view = (active_view == view_id);
+
+    if (is_active_view) {
+        draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(abf_color_active));
+    }
+    else {
+        draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(defcolor_bar));
+    }    
+
+    FColor base_color = fcolor_id(defcolor_base);
+    FColor pop2_color = fcolor_id(defcolor_pop2);
+
+    i64 cursor_position = view_get_cursor_pos(app, view_id);
+    Buffer_Cursor cursor = view_compute_cursor(app, view_id, seek_pos(cursor_position));
+
+    Fancy_Line list = {};
+    String_Const_u8 unique_name = push_buffer_unique_name(app, scratch, buffer);
+    push_fancy_string(scratch, &list, base_color, unique_name);
+    push_fancy_stringf(scratch, &list, base_color, " - Row: %3.lld Col: %3.lld -", cursor.line, cursor.col);
+
+    Managed_Scope scope = buffer_get_managed_scope(app, buffer);
+    Line_Ending_Kind* eol_setting = scope_attachment(app, scope, buffer_eol_setting,
+        Line_Ending_Kind);
+    switch (*eol_setting) {
+    case LineEndingKind_Binary:
+    {
+        push_fancy_string(scratch, &list, base_color, string_u8_litexpr(" bin"));
+    }break;
+
+    case LineEndingKind_LF:
+    {
+        push_fancy_string(scratch, &list, base_color, string_u8_litexpr(" lf"));
+    }break;
+
+    case LineEndingKind_CRLF:
+    {
+        push_fancy_string(scratch, &list, base_color, string_u8_litexpr(" crlf"));
+    }break;
+    }
+
+    u8 space[3];
+    {
+        Dirty_State dirty = buffer_get_dirty_state(app, buffer);
+        String_u8 str = Su8(space, 0, 3);
+        if (dirty != 0) {
+            string_append(&str, string_u8_litexpr(" "));
+        }
+        if (HasFlag(dirty, DirtyState_UnsavedChanges)) {
+            string_append(&str, string_u8_litexpr("*"));
+        }
+        if (HasFlag(dirty, DirtyState_UnloadedChanges)) {
+            string_append(&str, string_u8_litexpr("!"));
+        }
+        push_fancy_string(scratch, &list, pop2_color, str.string);
+    }
+
+    Vec2_f32 p = bar.p0 + V2f32(2.f, 2.f);
+    draw_fancy_line(app, face_id, fcolor_zero(), &list, p);
 }
 
 function void

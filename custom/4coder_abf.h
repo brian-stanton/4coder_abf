@@ -37,13 +37,14 @@
 #define ABF_COLOR_TYPE 0xFF30E3E3
 #define ABF_COLOR_VAR_DECLARATION 0xFF1FAB7E
 #define ABF_COLOR_PARENS 0xFFFFFFFF
+#define ABF_COLOR_DEEP_FOREST 0xFF122621   
+#define ABF_COLOR_MISTY_BLUE 0xFF005B87
 
 #define FOUR_CODER_COLOR_TEXT_DEFAULT 0xFF90B080
+#define FOUR_CODER_COLOR_BACK_DEFAULT 0xFF0C0C0C
 
 function void abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id);
-function void abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
-    Buffer_ID buffer, Text_Layout_ID text_layout_id,
-    Rect_f32 rect);
+function void abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id, Buffer_ID buffer, Text_Layout_ID text_layout_id, Rect_f32 rect);
 function void set_abf_color_scheme(Application_Links* app);
 function void abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id, Token_Array* array, Buffer_ID buffer);
 function void abf_draw_scope_highlight(Application_Links* app, Buffer_ID buffer, Text_Layout_ID text_layout_id, i64 pos, ARGB_Color* colors, i32 color_count);
@@ -53,9 +54,8 @@ function Managed_ID abf_token_color(Token token);
 function Managed_ID abf_color_keyword(Token_Base_Kind sub_kind);
 function Managed_ID abf_color_identifier(Token_Base_Kind sub_kind);
 function void abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id, Token_Array* array, Buffer_ID buffer);
-
 function void abf_page(Application_Links* app, View_ID view, Rect_f32 region, Buffer_ID Buffer, b32 PageUp);
-
+function void abf_draw_file_bar(Application_Links* app, View_ID view_id, Buffer_ID buffer, Face_ID face_id, Rect_f32 bar);
 
 function void abf_init(Application_Links* app);
 
