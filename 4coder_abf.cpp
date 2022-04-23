@@ -98,7 +98,10 @@ custom_layer_init(Application_Links *app) {
     system_set_fullscreen(true);
 
     default_framework_init(app);
+
+#if ABF_CUSTOMIZATIONS
     set_abf_color_scheme(app);
+#endif
 
     set_all_default_hooks(app);
 	
@@ -115,16 +118,22 @@ custom_layer_init(Application_Links *app) {
 	
     mapping_init(tctx, &framework_mapping);
 
+    // NOTE(brian): added 2022/04/23; needed for build
+    String_ID global_map_id = vars_save_string_lit("keys_global");
+    String_ID file_map_id = vars_save_string_lit("keys_file");
+    String_ID code_map_id = vars_save_string_lit("keys_code");
+
 #if OS_MAC
     setup_mac_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
 #elif ABF_CUSTOM_MAPPING
-    setup_abf_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
+    setup_abf_mapping(&framework_mapping, global_map_id, file_map_id, code_map_id);
 #else
-    setup_default_mapping(&framework_mapping, mapid_global, mapid_file, mapid_code);
+    setup_default_mapping(&framework_mapping, global_map_id, file_map_id, code_map_id);
 #endif
 
 }
 
+#if ABF_CUSTOMIZATIONS
 function void
 set_abf_color_scheme(Application_Links* app) {
     if (global_theme_arena.base_allocator == 0) {
@@ -207,6 +216,7 @@ set_abf_color_scheme(Application_Links* app) {
 
     active_color_table = default_color_table;
 }
+#endif
 
 function void
 abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id) {
@@ -214,12 +224,12 @@ abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id
     View_ID active_view = get_active_view(app, Access_Always);
     b32 is_active_view = (active_view == view_id);
 
-    f32 MarginWeight = 2.f;
-
+    
     Rect_f32 view_rect = view_get_screen_rect(app, view_id);
-    Rect_f32 region = rect_inner(view_rect, MarginWeight);
     
 #if ABF_CUSTOMIZATIONS    
+    f32 MarginWeight = 2.f;
+    Rect_f32 region = rect_inner(view_rect, MarginWeight);
     // NOTE(brian): Draw background, margins
     draw_rectangle(app, region, 0.f, ABF_COLOR_BACKGROUND);
     if (is_active_view) {
@@ -277,7 +287,8 @@ abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id
 
     // NOTE(4cA): layout line numbers
     Rect_f32 line_number_rect = {};
-    if (global_config.show_line_number_margins) {
+    b32 show_line_number_margins = def_get_config_b32(vars_save_string_lit("show_line_number_margins"));
+    if (show_line_number_margins) {
         Rect_f32_Pair pair = layout_line_number_margin(app, buffer, region, digit_advance);
         line_number_rect = pair.min;
         region = pair.max;
@@ -288,7 +299,7 @@ abf_render_caller(Application_Links* app, Frame_Info frame_info, View_ID view_id
     Text_Layout_ID text_layout_id = text_layout_create(app, buffer, region, buffer_point);
 
     // NOTE(4cA): draw line numbers
-    if (global_config.show_line_number_margins) {
+    if (show_line_number_margins) {
         draw_line_number_margin(app, view_id, buffer, face_id, text_layout_id, line_number_rect);
     }
 
@@ -327,7 +338,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
 #endif
 
         // NOTE(4cA): Scan for TODOs and NOTEs
-        if (global_config.use_comment_keyword) {
+        b32 use_comment_keyword = def_get_config_b32(vars_save_string_lit("use_comment_keyword"));
+        if (use_comment_keyword) {
             Comment_Highlight_Pair pairs[] = {
                 {string_u8_litexpr("NOTE"), finalize_color(defcolor_comment_pop, 0)},
                 {string_u8_litexpr("TODO"), finalize_color(defcolor_comment_pop, 1)},
@@ -344,7 +356,8 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     view_correct_mark(app, view_id);
 
     // NOTE(4cA): Scope highlight
-    if (global_config.use_scope_highlight) {
+    b32 use_scope_highlight = def_get_config_b32(vars_save_string_lit("use_scope_highlight"));
+    if (use_scope_highlight) {
         Color_Array colors = finalize_color_array(defcolor_back_cycle);
 
 #if ABF_CA
@@ -356,17 +369,19 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
 
     }
 
-    if (global_config.use_error_highlight || global_config.use_jump_highlight) {
+    b32 use_error_highlight = def_get_config_b32(vars_save_string_lit("use_error_highlight"));
+    b32 use_jump_highlight = def_get_config_b32(vars_save_string_lit("use_jump_highlight"));
+    if (use_error_highlight || use_jump_highlight) {
         // NOTE(4cA): Error highlight
         String_Const_u8 name = string_u8_litexpr("*compilation*");
         Buffer_ID compilation_buffer = get_buffer_by_name(app, name, Access_Always);
-        if (global_config.use_error_highlight) {
+        if (use_error_highlight) {
             draw_jump_highlights(app, buffer, text_layout_id, compilation_buffer,
                 fcolor_id(defcolor_highlight_junk));
         }
 
         // NOTE(4cA): Search highlight
-        if (global_config.use_jump_highlight) {
+        if (use_jump_highlight) {
             Buffer_ID jump_buffer = get_locked_jump_buffer(app);
             if (jump_buffer != compilation_buffer) {
                 draw_jump_highlights(app, buffer, text_layout_id, jump_buffer,
@@ -376,13 +391,15 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     }
 
     // NOTE(4cA): Color parens
-    if (global_config.use_paren_helper) {
+    b32 use_paren_helper = def_get_config_b32(vars_save_string_lit("use_paren_helper"));
+    if (use_paren_helper) {
         Color_Array colors = finalize_color_array(defcolor_text_cycle);
         draw_paren_highlight(app, buffer, text_layout_id, cursor_pos, colors.vals, colors.count);
     }
 
     // NOTE(4cA): Line highlight
-    if (global_config.highlight_line_at_cursor && is_active_view) {
+    b32 highlight_line_at_cursor = def_get_config_b32(vars_save_string_lit("highlight_line_at_cursor"));
+    if (highlight_line_at_cursor && is_active_view) {
         i64 line_number = get_line_number_from_pos(app, buffer, cursor_pos);
 
         draw_line_highlight(app, text_layout_id, line_number,
@@ -419,7 +436,7 @@ abf_render_buffer(Application_Links* app, View_ID view_id, Face_ID face_id,
     }
 
     // NOTE(4cA): Fade ranges
-    paint_fade_ranges(app, text_layout_id, buffer, view_id);
+    paint_fade_ranges(app, text_layout_id, buffer);
 
     // NOTE(4cA): put the actual text on the actual screen
     draw_text_layout_default(app, text_layout_id);
@@ -542,6 +559,7 @@ abf_draw_enclosures(Application_Links* app, Text_Layout_ID text_layout_id, Buffe
     }
 }
 
+#if ABF_SYNTAX_HIGHLIGHT
 // NOTE: This function is a modification of 'draw_cpp_token_colors' from '4coder_draw.cpp'
 function void
 abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id, Token_Array* array, Buffer_ID buffer) {
@@ -649,7 +667,9 @@ abf_draw_cpp_token_colors(Application_Links* app, Text_Layout_ID text_layout_id,
     end_temp(notes_temp);
     /* NOTE: End modification. */
 }
+#endif
 
+#if ABF_SYNTAX_HIGHLIGHT
 function FColor
 abf_get_token_color_cpp(Token token) {
     Managed_ID color = defcolor_text_default;
@@ -722,7 +742,9 @@ abf_get_token_color_cpp(Token token) {
     ColorToBeReturned.id = (ID_Color)color;
     return(ColorToBeReturned);
 }
+#endif
 
+#if ABF_SYNTAX_HIGHLIGHT
 function Managed_ID
 abf_token_color(Token token) {
     switch (token.kind)
@@ -742,7 +764,9 @@ abf_token_color(Token token) {
 
     } // end switch
 }
+#endif
 
+#if ABF_SYNTAX_HIGHLIGHT
 function Managed_ID
 abf_color_keyword(Token_Base_Kind sub_kind) {
     /*
@@ -784,8 +808,9 @@ abf_color_keyword(Token_Base_Kind sub_kind) {
 
     } // end switch
 }
+#endif
 
-
+#if ABF_SYNTAX_HIGHLIGHT
 function Managed_ID
 abf_color_identifier(Token_Base_Kind sub_kind) {
     switch (sub_kind)
@@ -803,6 +828,7 @@ abf_color_identifier(Token_Base_Kind sub_kind) {
 
     } // end switch
 }
+#endif
 
 /**
     Used by abf_page_up and abf_page_down commands (declared at top)
@@ -845,7 +871,8 @@ abf_draw_file_bar(Application_Links* app, View_ID view_id, Buffer_ID buffer, Fac
     b32 is_active_view = (active_view == view_id);
 
     if (is_active_view) {
-        draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(abf_color_active));
+        // draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(abf_color_active));
+        draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(defcolor_highlight_cursor_line));
     }
     else {
         draw_rectangle_fcolor(app, bar, 0.f, fcolor_id(defcolor_bar));

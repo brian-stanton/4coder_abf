@@ -3,27 +3,28 @@
 
 #include "4coder_default_include.cpp"
 
+// TODO(brian): figure out if this include is really needed
+#include "generated/managed_id_metadata.cpp"
+
 /**
     Header file includes
 */
 #include "abf-custom/4coder_abf_center_view.h"
 #include "abf-custom/4coder_abf_CA.cpp"
-#include "abf-custom/4coder_abf_syntax_highlighting.cpp"
+#include "abf-custom/4coder_abf_syntax_highlighting.h"
 
 /**
     Code files that don't use any functions defined in 4coder_abf.cpp
 */
 #include "abf-custom/4coder_abf_mapping.cpp"
 
-// TODO(brian): figure out if this include is really needed
-#include "generated/managed_id_metadata.cpp"
-
 #define ABF_CUSTOM_MAPPING true
-#define ABF_CUSTOMIZATIONS true
+#define ABF_COLOR_SCHEME false
+#define ABF_CUSTOMIZATIONS false
 
 // TODO(brian): pull out preproc defines to build command line parameter
 #define ABF_CA false
-#define ABF_SYNTAX_HIGHLIGHT true
+#define ABF_SYNTAX_HIGHLIGHT false
 
 #define ABF_MANAGED_SCOPE_GROUP_NAME ((void*) "abf")
 
