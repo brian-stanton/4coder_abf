@@ -8,6 +8,7 @@
 function void
 abf_draw_ca(Application_Links* app, abf_ca_context* abfCAContext)
 {
+	/*
 	if (abfCAContext->NumEnclosures == 0) {
 		return;
 	}
@@ -25,12 +26,15 @@ abf_draw_ca(Application_Links* app, abf_ca_context* abfCAContext)
 								0x00000000 * GlyphFlag_Rotate90^3,
 								abfCAContext->delta);
 	}
+	*/
+	return;
 }
 
 function void
 abf_get_header_string_u8(Application_Links* app, Buffer_ID buffer,
 							abf_ca_enclosure* Enclosure, Face_ID face,
 							Range_i64 lines, f32 TextRegionWidth) {
+	/*
 	i64 BufferIndexOfScopeHeader = buffer_pos_from_relative_character(app,
 		buffer,
 		TextRegionWidth,
@@ -49,7 +53,8 @@ abf_get_header_string_u8(Application_Links* app, Buffer_ID buffer,
 	abf_lexed_header f = abf_read_header_line(app, buffer, LineIndicies, LineIndicies.prevLineIndex);
 	Enclosure->EnclosureHeader.str = f.chars;
 	Enclosure->EnclosureHeader.size = f.size;
-
+	*/
+	return;
 }
 
 // Deprecated 2020/11/25
@@ -245,8 +250,10 @@ abf_draw_CA(Application_Links *app, Buffer_ID buffer, Text_Layout_ID text_layout
 }
 #endif
 
+
 function abf_lexed_header
 abf_read_header_line(Application_Links* app, Buffer_ID buffer, V2_i64 indicies, i64 index) {
+	/*
 	abf_lexed_header Result = {};
 	u8 ScopeHeader[ABF_MAX_CA_SIZE];
 
@@ -255,10 +262,12 @@ abf_read_header_line(Application_Links* app, Buffer_ID buffer, V2_i64 indicies, 
 		Result.size = 0;
 		for (i32 i = 0; i < ABF_MAX_CA_SIZE; i++) {
 			u8 c = ScopeHeader[i];
-			if (c == 13 /* '\r' */ || c == 10 /* '\n' */) {
+			// 13 : \r; 10 : \n
+			if (c == 13 || c == 10) {
 				continue;
 			}
-			else if (ScopeHeader[i] == 123 /* '{' */) {
+			// 123 : {
+			else if (ScopeHeader[i] == 123) {
 
 				if (i == 0) {
 					return abf_read_header_line(app, buffer, indicies, indicies.prevLineIndex);
@@ -276,11 +285,14 @@ abf_read_header_line(Application_Links* app, Buffer_ID buffer, V2_i64 indicies, 
 		// TODO(brian): handle buffer read failure
 	}
 	return Result;
+	*/
+	abf_lexed_header alh;
+	return alh;
 }
 
-void abf_print_message(Application_Links* app, void* data, i32 length) {
+void abf_print_message(Application_Links* app, u8* data, i32 length) {
 	String_Const_u8 s = {};
 	s.size = length;
-	s.data = data;
+	s.str = data;
 	print_message(app, s);
 }
